@@ -5,34 +5,51 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class Office {
-    private String name;
-    private Collection<Counter> counters;
-    private BlockingQueue<Customer> queue = new LinkedBlockingQueue<>();
-    //private Document documentIssued;
+    private final String name;
+    private final ArrayList<Counter> counters = new ArrayList<>();
+    private final BlockingQueue<Customer> queue = new LinkedBlockingQueue<>();
+    private Document documentIssued;
+    private Printer printer;
 
-    public Office(String name, Collection<Counter> counters) {
+    public Office(String name, Document documentIssued) {
         this.name = name;
-        this.counters = counters;
+        this.documentIssued = documentIssued;
     }
 
-    public void usePrinter(Counter counter) {
-
+    public void addCounter(Counter counter) {
+        counters.add(counter);
+        counter.setOffice(this);
     }
 
     public String getName() {
         return name;
     }
 
-    public void addCustomer(Customer c) {
-        queue.add(c);
-    }
-
     public BlockingQueue<Customer> getQueue() {
         return queue;
     }
 
-    public void openCounters() {
-
+    public void addCustomer(Customer c) {
+        queue.add(c);
     }
 
+    public Document getDocumentIssued() {
+        return documentIssued;
+    }
+
+    public void setDocumentIssued(Document documentIssued) {
+        this.documentIssued = documentIssued;
+    }
+
+    public ArrayList<Counter> getCounters() {
+        return counters;
+    }
+
+    public void openCounter(Counter counter) {
+        counter.open();
+    }
+
+    public void closeCounter(Counter counter) {
+        counter.close();
+    }
 }
