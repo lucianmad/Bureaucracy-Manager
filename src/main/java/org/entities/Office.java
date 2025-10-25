@@ -8,12 +8,10 @@ public class Office {
     private final String name;
     private final ArrayList<Counter> counters = new ArrayList<>();
     private final BlockingQueue<Customer> queue = new LinkedBlockingQueue<>();
-    private Document documentIssued;
     private Printer printer;
 
-    public Office(String name, Document documentIssued) {
+    public Office(String name) {
         this.name = name;
-        this.documentIssued = documentIssued;
     }
 
     public void addCounter(Counter counter) {
@@ -31,14 +29,6 @@ public class Office {
 
     public void addCustomer(Customer c) {
         queue.add(c);
-    }
-
-    public Document getDocumentIssued() {
-        return documentIssued;
-    }
-
-    public void setDocumentIssued(Document documentIssued) {
-        this.documentIssued = documentIssued;
     }
 
     public ArrayList<Counter> getCounters() {

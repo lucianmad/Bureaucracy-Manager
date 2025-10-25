@@ -5,50 +5,96 @@ import org.entities.Customer;
 import org.entities.Document;
 import org.entities.Office;
 
-import java.util.ArrayList;
+import java.net.CookieHandler;
+import java.util.*;
+import java.util.concurrent.*;
 
 public class Main {
     public static void main(String[] args) {
+
         var taxReceipt = new Document("Tax Receipt");
         var idCopy = new Document("Id Copy");
+        var medicalReport = new Document("Medical Report");
         var certificate = new Document("Certificate");
 
-        var taxOffice = new Office("Tax Office", taxReceipt);
-        taxOffice.addCounter(new Counter(1, null));
-        taxOffice.addCounter(new Counter(2, null));
-        taxOffice.addCounter(new Counter(3, null));
+        var Office1 = new Office("Office 1");
+        var Office2 = new Office("Office 2");
+        var Office3 = new Office("Office 3");
 
-        var idCopyOffice = new Office("Id Copy Office", idCopy);
-        idCopyOffice.addCounter(new Counter(4, taxReceipt));
-        idCopyOffice.addCounter(new Counter(5, taxReceipt));
-        idCopyOffice.addCounter(new Counter(6, taxReceipt));
+        Map<Document, ArrayList<Document>> documentDependencies = new HashMap<>();
 
-        var certificateOffice = new Office("Certificate Office", certificate);
-        certificateOffice.addCounter(new Counter(7, idCopy));
-        certificateOffice.addCounter(new Counter(8, idCopy));
+        documentDependencies.put(medicalReport, new ArrayList<>(List.of(taxReceipt, idCopy)));
+        documentDependencies.put(certificate, new ArrayList<>(List.of(taxReceipt, idCopy, medicalReport)));
 
-        var customer = new Customer("Customer 1", certificate);
 
-        taxOffice.addCustomer(customer);
-        var taxOfficeCounter = taxOffice.getCounters().getFirst();
-        taxOfficeCounter.addCustomer(customer);
-        taxOfficeCounter.emitDocs(customer);
+        var Counter1 = new Counter(1, idCopy, documentDependencies);
+        var Counter2 = new Counter(2, idCopy, documentDependencies);
+        var Counter3 = new Counter(3, taxReceipt, documentDependencies);
+        var Counter4 = new Counter(4, idCopy, documentDependencies);
+        var Counter5 = new Counter(5, taxReceipt, documentDependencies);
+        var Counter6 = new Counter(6, medicalReport, documentDependencies);
+        var Counter7 = new Counter(7, medicalReport, documentDependencies);
+        var Counter8 = new Counter(8, certificate, documentDependencies);
 
-        idCopyOffice.addCustomer(customer);
-        var idCopyOfficeCounter = idCopyOffice.getCounters().getFirst();
-        idCopyOfficeCounter.addCustomer(customer);
-        idCopyOfficeCounter.emitDocs(customer);
+        Office1.addCounter(Counter1);
+        Office1.addCounter(Counter2);
+        Office1.addCounter(Counter3);
+        Office2.addCounter(Counter4);
+        Office2.addCounter(Counter5);
+        Office2.addCounter(Counter6);
+        Office3.addCounter(Counter7);
+        Office3.addCounter(Counter8);
 
-        certificateOffice.addCustomer(customer);
-        var certificateOfficeCounter = certificateOffice.getCounters().getFirst();
-        certificateOfficeCounter.addCustomer(customer);
-        certificateOfficeCounter.emitDocs(customer);
 
-        var customer2 = new Customer("Customer 2", certificate);
+        Map<Document, ArrayList<Counter>> obtainDocumentFromCounters = new HashMap<>();
 
-        idCopyOffice.addCustomer(customer2);
-        var idCopyOfficeCounter2 = idCopyOffice.getCounters().getFirst();
-        idCopyOfficeCounter2.addCustomer(customer2);
-        idCopyOfficeCounter2.emitDocs(customer2);
+        obtainDocumentFromCounters.put(taxReceipt, new ArrayList<>(List.of(Counter3, Counter5)));
+        obtainDocumentFromCounters.put(idCopy, new ArrayList<>(List.of(Counter1, Counter2, Counter4)));
+        obtainDocumentFromCounters.put(medicalReport, new ArrayList<>(List.of(Counter6, Counter7)));
+        obtainDocumentFromCounters.put(certificate, new ArrayList<>(List.of(Counter8)));
+
+        var Customer1 = new Customer(
+                "Elvis",
+                certificate,
+                documentDependencies,
+                obtainDocumentFromCounters,
+                new ArrayList<>(List.of(taxReceipt))
+        );
+
+        var Customer2 = new Customer(
+                "Dorian",
+                medicalReport,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
+
+
+
+        int numCounters = 8;
+        int numCustomers = 2;
+
+        ExecutorService executor = Executors.newFixedThreadPool(numCounters + numCustomers);
+
+        List<Counter> allCounters = List.of(Counter1, Counter2, Counter3, Counter4, Counter5, Counter6, Counter7, Counter8);
+        for (Counter counter : allCounters) {
+            executor.submit(counter);
+        }
+
+        executor.submit(Customer1);
+        executor.submit(Customer2);
+
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+        scheduler.scheduleAtFixedRate(() -> {
+            Counter randomCounter = allCounters.get(new Random().nextInt(allCounters.size()));
+            if (Math.random() < 0.5) randomCounter.takeRandomCoffeeBreak();
+        }, 2, 5, TimeUnit.SECONDS);
+
+        // --- End simulation after 30s
+        CompletableFuture.delayedExecutor(30, TimeUnit.SECONDS).execute(() -> {
+            System.out.println("Simulation ended.");
+            scheduler.shutdownNow();
+            executor.shutdownNow();
+        });
+
     }
 }

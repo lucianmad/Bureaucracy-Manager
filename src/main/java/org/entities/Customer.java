@@ -1,16 +1,75 @@
 package org.entities;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
-public class Customer {
+public class Customer implements Runnable {
     private String name;
-    private Set<Document> ownedDocuments = new HashSet<>();
+    private final ArrayList<Document> ownedDocuments;
     private Document goalDocument;
+    private ArrayList<Document> documentsToObtain;
+    private Map<Document, ArrayList<Counter>> obtainDocumentFromCounters;
 
-    public Customer(String name, Document goal) {
+    private final Map<Document, CompletableFuture<Document>> pendingDocs = new HashMap<>();
+
+    public Customer(String name, Document goal, Map<Document, ArrayList<Document>> docDependencies, Map<Document, ArrayList<Counter>> docFromCounters) {
         this.name = name;
         this.goalDocument = goal;
+        this.documentsToObtain = new ArrayList<>();
+        if (docDependencies.get(goal) != null)
+            this.documentsToObtain.addAll(docDependencies.get(goal));
+        this.documentsToObtain.add(goal);
+        this.obtainDocumentFromCounters = docFromCounters;
+        ownedDocuments = new ArrayList<>();
+    }
+
+    public Customer(String name, Document goal, Map<Document, ArrayList<Document>> docDependencies, Map<Document, ArrayList<Counter>> docFromCounters, ArrayList<Document> ownedDocuments) {
+        this.name = name;
+        this.goalDocument = goal;
+        this.documentsToObtain = new ArrayList<>();
+        if (docDependencies.get(goal) != null)
+            this.documentsToObtain.addAll(docDependencies.get(goal));
+        this.documentsToObtain.add(goal);
+        this.obtainDocumentFromCounters = docFromCounters;
+        this.ownedDocuments = ownedDocuments;
+    }
+
+    private boolean hasAllPrerequisites(Document doc) {
+        var required = documentsToObtain.subList(0, documentsToObtain.indexOf(doc));
+        return ownedDocuments.containsAll(required);
+    }
+
+    public void run() {
+        System.out.println(name + " wants to obtain " + goalDocument.toString());
+
+        for (Document doc : documentsToObtain) {
+            while (!hasAllPrerequisites(doc)) {
+                try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+            }
+
+            ArrayList<Counter> counters = obtainDocumentFromCounters.get(doc);
+            Counter counter = counters.get(new Random().nextInt(counters.size()));
+
+            CompletableFuture<Document> future = new CompletableFuture<>();
+            pendingDocs.put(doc, future);
+
+            System.out.println(name + " goes to Counter " + counter.getId() + " for " + doc);
+            counter.addCustomer(this);
+
+            try {
+                Document obtained = future.get();
+                receiveDocument(obtained);
+            } catch (Exception e) {
+                System.out.println(name + " failed to obtain " + doc + ": " + e.getMessage());
+            }
+        }
+    }
+
+    public void completeDocument(Document doc) {
+        CompletableFuture<Document> future = pendingDocs.get(doc);
+        if (future != null && !future.isDone()) {
+            future.complete(doc);
+        }
     }
 
     public String getName() {
