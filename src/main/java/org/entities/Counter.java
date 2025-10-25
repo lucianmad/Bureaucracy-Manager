@@ -45,7 +45,7 @@ public class Counter implements Runnable {
                 System.out.println("Counter " + id + " serving " + customer.getName() +
                         " for " + issuedDocument);
 
-                Thread.sleep(1000);
+                Thread.sleep(2000);
                 emitDocs(customer);
             }
         } catch (InterruptedException e) {
@@ -89,7 +89,7 @@ public class Counter implements Runnable {
         CompletableFuture.runAsync(() -> {
             try {
                 open = false;
-                System.out.println("Counter " + id + " is taking a coffee break");
+                System.out.println("[BREAK] Counter " + id + " is taking a coffee break ☕");
                 Thread.sleep(3000); // break duration
                 open = true;
                 System.out.println("Counter " + id + " is back from coffee break");
@@ -117,5 +117,9 @@ public class Counter implements Runnable {
 
     public int getId() {
         return id;
+    }
+
+    public boolean isOpen() {
+        return  open;
     }
 }

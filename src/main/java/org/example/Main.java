@@ -68,33 +68,59 @@ public class Main {
                 obtainDocumentFromCounters
         );
 
+        var Customer3 = new Customer(
+                "Florin",
+                certificate,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
 
+        var Customer4 = new Customer(
+                "Ana",
+                medicalReport,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
 
-        int numCounters = 8;
-        int numCustomers = 2;
-
-        ExecutorService executor = Executors.newFixedThreadPool(numCounters + numCustomers);
-
+        List<Customer> allCustomers = List.of(Customer1, Customer2, Customer3, Customer4);
         List<Counter> allCounters = List.of(Counter1, Counter2, Counter3, Counter4, Counter5, Counter6, Counter7, Counter8);
+
+
+        ExecutorService executor = Executors.newFixedThreadPool(allCounters.size() + allCustomers.size());
+
+
         for (Counter counter : allCounters) {
-            executor.submit(counter);
+            counter.open(); // starts internal thread
         }
 
-        executor.submit(Customer1);
-        executor.submit(Customer2);
 
+        List<CompletableFuture<Void>> customerFutures = new ArrayList<>();
+        for (Customer customer : allCustomers) {
+            CompletableFuture<Void> future = CompletableFuture.runAsync(customer, executor);
+            customerFutures.add(future);
+        }
+
+
+        Random random = new Random();
         ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
         scheduler.scheduleAtFixedRate(() -> {
-            Counter randomCounter = allCounters.get(new Random().nextInt(allCounters.size()));
-            if (Math.random() < 0.5) randomCounter.takeRandomCoffeeBreak();
-        }, 2, 5, TimeUnit.SECONDS);
+            var randomCounter = allCounters.get(random.nextInt(allCounters.size()));
+            if (Math.random() < 0.5) {
+                CompletableFuture.runAsync(() -> {
 
-        // --- End simulation after 30s
-        CompletableFuture.delayedExecutor(30, TimeUnit.SECONDS).execute(() -> {
-            System.out.println("Simulation ended.");
-            scheduler.shutdownNow();
-            executor.shutdownNow();
-        });
+                    randomCounter.takeRandomCoffeeBreak();
+                });
+            }
+        }, 5, 5, TimeUnit.SECONDS); // every 5 seconds, random break
 
+
+        CompletableFuture.allOf(customerFutures.toArray(new CompletableFuture[0]))
+                .thenRun(() -> {
+                    System.out.println("All customers have received their goal documents!");
+                    scheduler.shutdownNow();
+                    executor.shutdownNow();
+                    // Close all counters
+                    allCounters.forEach(Counter::close);
+                });
     }
 }

@@ -47,8 +47,35 @@ public class Customer implements Runnable {
                 try { Thread.sleep(50); } catch (InterruptedException ignored) {}
             }
 
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
             ArrayList<Counter> counters = obtainDocumentFromCounters.get(doc);
-            Counter counter = counters.get(new Random().nextInt(counters.size()));
+
+
+            List<Counter> availableCounters = counters.stream()
+                    .filter(Counter::isOpen)
+                    .toList();
+
+            Counter counter;
+            if (!availableCounters.isEmpty()) {
+                counter = availableCounters.get(new Random().nextInt(availableCounters.size()));
+            } else {
+                // All counters are on break, wait a bit and retry
+                while (true) {
+                    try {
+                        Thread.sleep(100);
+                    } catch (InterruptedException ignored) {}
+                    availableCounters = counters.stream().filter(Counter::isOpen).toList();
+                    if (!availableCounters.isEmpty()) {
+                        counter = availableCounters.get(new Random().nextInt(availableCounters.size()));
+                        break;
+                    }
+                }
+            }
 
             CompletableFuture<Document> future = new CompletableFuture<>();
             pendingDocs.put(doc, future);

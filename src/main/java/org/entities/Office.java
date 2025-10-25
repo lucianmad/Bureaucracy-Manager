@@ -42,4 +42,16 @@ public class Office {
     public void closeCounter(Counter counter) {
         counter.close();
     }
+
+//    public void setPrinter(Printer printer) {
+//        this.printer = printer;
+//    }
+//
+//    public Printer getPrinter() {
+//        return printer;
+//    }
+//
+//    public void shutdown() {
+//        printer.stop();
+//    }
 }
