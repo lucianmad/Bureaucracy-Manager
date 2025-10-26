@@ -4,11 +4,11 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public class Customer implements Runnable {
-    private String name;
+    private final String name;
     private final ArrayList<Document> ownedDocuments;
-    private Document goalDocument;
-    private ArrayList<Document> documentsToObtain;
-    private Map<Document, ArrayList<Counter>> obtainDocumentFromCounters;
+    private final Document goalDocument;
+    private final ArrayList<Document> documentsToObtain;
+    private final Map<Document, ArrayList<Counter>> obtainDocumentFromCounters;
 
     private final Map<Document, CompletableFuture<Document>> pendingDocs = new HashMap<>();
 
@@ -44,7 +44,9 @@ public class Customer implements Runnable {
 
         for (Document doc : documentsToObtain) {
             while (!hasAllPrerequisites(doc)) {
-                try { Thread.sleep(50); } catch (InterruptedException ignored) {}
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {}
             }
 
             try {
@@ -54,26 +56,17 @@ public class Customer implements Runnable {
             }
 
             ArrayList<Counter> counters = obtainDocumentFromCounters.get(doc);
-
-
-            List<Counter> availableCounters = counters.stream()
-                    .filter(Counter::isOpen)
-                    .toList();
-
             Counter counter;
-            if (!availableCounters.isEmpty()) {
-                counter = availableCounters.get(new Random().nextInt(availableCounters.size()));
-            } else {
-                // All counters are on break, wait a bit and retry
-                while (true) {
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException ignored) {}
-                    availableCounters = counters.stream().filter(Counter::isOpen).toList();
-                    if (!availableCounters.isEmpty()) {
-                        counter = availableCounters.get(new Random().nextInt(availableCounters.size()));
-                        break;
-                    }
+            while (true) {
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {}
+                List<Counter> availableCounters = counters.stream()
+                        .filter(Counter::isOpen)
+                        .toList();
+                if (!availableCounters.isEmpty()) {
+                    counter = availableCounters.get(new Random().nextInt(availableCounters.size()));
+                    break;
                 }
             }
 

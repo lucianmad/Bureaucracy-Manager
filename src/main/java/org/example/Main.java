@@ -1,11 +1,7 @@
 package org.example;
 
-import org.entities.Counter;
-import org.entities.Customer;
-import org.entities.Document;
-import org.entities.Office;
+import org.entities.*;
 
-import java.net.CookieHandler;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -17,9 +13,13 @@ public class Main {
         var medicalReport = new Document("Medical Report");
         var certificate = new Document("Certificate");
 
-        var Office1 = new Office("Office 1");
-        var Office2 = new Office("Office 2");
-        var Office3 = new Office("Office 3");
+        var printerOffice1 = new Printer("Office 1 Printer");
+        var printerOffice2 = new Printer("Office 2 Printer");
+        var printerOffice3 = new Printer("Office 3 Printer");
+
+        var Office1 = new Office("Office 1", printerOffice1);
+        var Office2 = new Office("Office 2", printerOffice2);
+        var Office3 = new Office("Office 3", printerOffice3);
 
         Map<Document, ArrayList<Document>> documentDependencies = new HashMap<>();
 
@@ -88,9 +88,8 @@ public class Main {
 
         ExecutorService executor = Executors.newFixedThreadPool(allCounters.size() + allCustomers.size());
 
-
         for (Counter counter : allCounters) {
-            counter.open(); // starts internal thread
+            executor.submit(counter);
         }
 
 
@@ -106,12 +105,9 @@ public class Main {
         scheduler.scheduleAtFixedRate(() -> {
             var randomCounter = allCounters.get(random.nextInt(allCounters.size()));
             if (Math.random() < 0.5) {
-                CompletableFuture.runAsync(() -> {
-
-                    randomCounter.takeRandomCoffeeBreak();
-                });
+                CompletableFuture.runAsync(() -> randomCounter.takeRandomCoffeeBreak());
             }
-        }, 5, 5, TimeUnit.SECONDS); // every 5 seconds, random break
+        }, 5, 5, TimeUnit.SECONDS);
 
 
         CompletableFuture.allOf(customerFutures.toArray(new CompletableFuture[0]))
@@ -119,8 +115,6 @@ public class Main {
                     System.out.println("All customers have received their goal documents!");
                     scheduler.shutdownNow();
                     executor.shutdownNow();
-                    // Close all counters
-                    allCounters.forEach(Counter::close);
                 });
     }
 }

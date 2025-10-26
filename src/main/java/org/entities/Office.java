@@ -1,17 +1,15 @@
 package org.entities;
 
 import java.util.*;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 public class Office {
     private final String name;
     private final ArrayList<Counter> counters = new ArrayList<>();
-    private final BlockingQueue<Customer> queue = new LinkedBlockingQueue<>();
-    private Printer printer;
+    private final Printer printer;
 
-    public Office(String name) {
+    public Office(String name, Printer printer) {
         this.name = name;
+        this.printer = printer;
     }
 
     public void addCounter(Counter counter) {
@@ -23,35 +21,7 @@ public class Office {
         return name;
     }
 
-    public BlockingQueue<Customer> getQueue() {
-        return queue;
+    public Printer getPrinter() {
+        return printer;
     }
-
-    public void addCustomer(Customer c) {
-        queue.add(c);
-    }
-
-    public ArrayList<Counter> getCounters() {
-        return counters;
-    }
-
-    public void openCounter(Counter counter) {
-        counter.open();
-    }
-
-    public void closeCounter(Counter counter) {
-        counter.close();
-    }
-
-//    public void setPrinter(Printer printer) {
-//        this.printer = printer;
-//    }
-//
-//    public Printer getPrinter() {
-//        return printer;
-//    }
-//
-//    public void shutdown() {
-//        printer.stop();
-//    }
 }

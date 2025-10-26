@@ -1,6 +1,5 @@
 package org.entities;
 
-import javax.print.Doc;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
@@ -38,18 +37,20 @@ public class Counter implements Runnable {
                 }
 
                 if (!checkRequiredDocuments(customer)) {
-                    System.out.println("[Counter " + id + "] " + customer.getName() +
+                    System.out.println(office.getName() + ": [Counter " + id + "] " + customer.getName() +
                             " is missing required documents for " + issuedDocument + ". Sent back!");
                 }
 
-                System.out.println("Counter " + id + " serving " + customer.getName() +
+                System.out.println(office.getName() + ": Counter " + id + " serving " + customer.getName() +
                         " for " + issuedDocument);
 
                 Thread.sleep(2000);
+                usePrinter(customer);
+
                 emitDocs(customer);
             }
         } catch (InterruptedException e) {
-            System.out.println("Counter " + id + " closed.");
+            System.out.println(office.getName() + ": Counter " + id + " closed.");
             Thread.currentThread().interrupt();
         }
     }
@@ -81,7 +82,7 @@ public class Counter implements Runnable {
     public void emitDocs(Customer customer) {
         customer.completeDocument(issuedDocument);
 
-        System.out.println("Counter " + id + " issued " + issuedDocument.toString() +
+        System.out.println(office.getName() + ": Counter " + id + " issued " + issuedDocument.toString() +
                 " to " + customer.getName());
     }
 
@@ -89,30 +90,18 @@ public class Counter implements Runnable {
         CompletableFuture.runAsync(() -> {
             try {
                 open = false;
-                System.out.println("[BREAK] Counter " + id + " is taking a coffee break ☕");
-                Thread.sleep(3000); // break duration
+                System.out.println("[BREAK] " + office.getName() + ": Counter " + id + " is taking a coffee break ☕");
+                Thread.sleep(3000);
                 open = true;
-                System.out.println("Counter " + id + " is back from coffee break");
+                System.out.println(office.getName() + ": Counter " + id + " is back from coffee break");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         });
     }
 
-    public void usePrinter(){
-
-    }
-
-    public void open(){
-        thread = new Thread(this);
-        thread.start();
-        System.out.println("Counter " + id + " opened.");
-    }
-
-    public void close(){
-        if (thread != null && thread.isAlive()) {
-            thread.interrupt();
-        }
+    public void usePrinter(Customer customer){
+        office.getPrinter().print(issuedDocument, this, customer);
     }
 
     public int getId() {
