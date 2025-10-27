@@ -40,7 +40,7 @@ public class Customer implements Runnable {
     }
 
     public void run() {
-        System.out.println(name + " wants to obtain " + goalDocument.toString());
+        System.out.println(name + " wants to obtain " + goalDocument);
 
         for (Document doc : documentsToObtain) {
             while (!hasAllPrerequisites(doc)) {
@@ -55,26 +55,12 @@ public class Customer implements Runnable {
                 throw new RuntimeException(e);
             }
 
-            ArrayList<Counter> counters = obtainDocumentFromCounters.get(doc);
-            Counter counter;
-            while (true) {
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException e) {}
-                List<Counter> availableCounters = counters.stream()
-                        .filter(Counter::isOpen)
-                        .toList();
-                if (!availableCounters.isEmpty()) {
-                    counter = availableCounters.get(new Random().nextInt(availableCounters.size()));
-                    break;
-                }
-            }
+            Counter counter = getAvailableCounterForDoc(doc);
 
             CompletableFuture<Document> future = new CompletableFuture<>();
             pendingDocs.put(doc, future);
 
-            System.out.println(name + " goes to Counter " + counter.getId() + " for " + doc);
-            counter.addCustomer(this);
+            goToCounterForDoc(counter, doc);
 
             try {
                 Document obtained = future.get();
@@ -83,6 +69,29 @@ public class Customer implements Runnable {
                 System.out.println(name + " failed to obtain " + doc + ": " + e.getMessage());
             }
         }
+    }
+
+    public Counter getAvailableCounterForDoc(Document doc) {
+        ArrayList<Counter> counters = obtainDocumentFromCounters.get(doc);
+        Counter counter;
+        while (true) {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {}
+            List<Counter> availableCounters = counters.stream()
+                    .filter(Counter::isOpen)
+                    .toList();
+            if (!availableCounters.isEmpty()) {
+                counter = availableCounters.get(new Random().nextInt(availableCounters.size()));
+                break;
+            }
+        }
+        return counter;
+    }
+
+    public void goToCounterForDoc(Counter counter, Document doc) {
+        System.out.println(name + " goes to Counter " + counter.getId() + " for " + doc);
+        counter.addCustomer(this);
     }
 
     public void completeDocument(Document doc) {

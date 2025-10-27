@@ -69,7 +69,7 @@ public class Main {
         );
 
         var Customer3 = new Customer(
-                "Florin",
+                "Stefan",
                 certificate,
                 documentDependencies,
                 obtainDocumentFromCounters
@@ -82,7 +82,52 @@ public class Main {
                 obtainDocumentFromCounters
         );
 
-        List<Customer> allCustomers = List.of(Customer1, Customer2, Customer3, Customer4);
+        var Customer5 = new Customer(
+                "Decebal",
+                certificate,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
+
+        var Customer6 = new Customer(
+                "Traian",
+                certificate,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
+
+        var Customer7 = new Customer(
+                "Benone",
+                idCopy,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
+
+        var Customer8 = new Customer(
+                "Sherlock",
+                medicalReport,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
+
+        var Customer9 = new Customer(
+                "Sosoaca",
+                certificate,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
+
+        var Customer10 = new Customer(
+                "Simion",
+                medicalReport,
+                documentDependencies,
+                obtainDocumentFromCounters
+        );
+
+        List<Customer> allCustomers = List.of(
+                Customer1, Customer2, Customer3, Customer4, Customer5,
+                Customer6, Customer7, Customer8, Customer9, Customer10
+        );
         List<Counter> allCounters = List.of(Counter1, Counter2, Counter3, Counter4, Counter5, Counter6, Counter7, Counter8);
 
 
@@ -105,7 +150,7 @@ public class Main {
         scheduler.scheduleAtFixedRate(() -> {
             var randomCounter = allCounters.get(random.nextInt(allCounters.size()));
             if (Math.random() < 0.5) {
-                CompletableFuture.runAsync(() -> randomCounter.takeRandomCoffeeBreak());
+                CompletableFuture.runAsync(randomCounter::takeRandomCoffeeBreak);
             }
         }, 5, 5, TimeUnit.SECONDS);
 

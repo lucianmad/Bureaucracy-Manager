@@ -10,11 +10,11 @@ public class Printer  {
         this.name = name;
     }
 
-    public void print(Document document, Counter counter, Customer customer) {
+    public void print(Document document, Counter counter, String customerName) {
         try {
             printerLock.acquire();
             System.out.println("[" + name + "] Printing " + document +
-                    " for " + customer.getName() + " from Counter " + counter.getId());
+                    " for " + customerName + " from Counter " + counter.getId());
             Thread.sleep(1000);
             System.out.println("[" + name + "] Done printing " + document);
         } catch (InterruptedException e) {

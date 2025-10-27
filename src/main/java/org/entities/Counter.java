@@ -14,7 +14,7 @@ public class Counter implements Runnable {
     private final ArrayList<Document> requiredDocuments;
     private Office office;
     private volatile boolean open = true;
-    private Thread thread;
+    private volatile boolean servingCustomer = false;
 
     public Counter(int id, Document issuedDocument, Map<Document, ArrayList<Document>> docDependencies) {
         this.id = id;
@@ -30,11 +30,13 @@ public class Counter implements Runnable {
     public void run() {
         try {
             while (true) {
-                Customer customer = queue.take();
 
                 while (!open) {
                     Thread.sleep(500);
                 }
+
+                Customer customer = queue.take();
+                servingCustomer = true;
 
                 if (!checkRequiredDocuments(customer)) {
                     System.out.println(office.getName() + ": [Counter " + id + "] " + customer.getName() +
@@ -45,9 +47,12 @@ public class Counter implements Runnable {
                         " for " + issuedDocument);
 
                 Thread.sleep(2000);
-                usePrinter(customer);
 
+                usePrinter(customer.getName());
                 emitDocs(customer);
+                servingCustomer = false;
+
+                Thread.sleep(200);
             }
         } catch (InterruptedException e) {
             System.out.println(office.getName() + ": Counter " + id + " closed.");
@@ -74,7 +79,6 @@ public class Counter implements Runnable {
                 System.out.println("MISSING " + requiredDocument + " for " + issuedDocument);
                 return false;
             }
-
         }
         return true;
     }
@@ -82,15 +86,29 @@ public class Counter implements Runnable {
     public void emitDocs(Customer customer) {
         customer.completeDocument(issuedDocument);
 
-        System.out.println(office.getName() + ": Counter " + id + " issued " + issuedDocument.toString() +
+        System.out.println(office.getName() + ": Counter " + id + " issued " + issuedDocument +
                 " to " + customer.getName());
     }
 
     public void takeRandomCoffeeBreak() {
         CompletableFuture.runAsync(() -> {
             try {
+                while (servingCustomer) {
+                    Thread.sleep(100);
+                }
+
                 open = false;
-                System.out.println("[BREAK] " + office.getName() + ": Counter " + id + " is taking a coffee break ☕");
+                System.out.println("[COFFEE BREAK] " + office.getName() + ": Counter " + id + " is taking a coffee break");
+
+                ArrayList<Customer> redirected = new ArrayList<>();
+                queue.drainTo(redirected);
+                for (Customer c : redirected) {
+                    Document doc = this.issuedDocument;
+                    Counter newCounter = c.getAvailableCounterForDoc(doc);
+                    System.out.println(c.getName() + " left Counter " + id);
+                    c.goToCounterForDoc(newCounter, doc);
+                }
+
                 Thread.sleep(3000);
                 open = true;
                 System.out.println(office.getName() + ": Counter " + id + " is back from coffee break");
@@ -100,8 +118,8 @@ public class Counter implements Runnable {
         });
     }
 
-    public void usePrinter(Customer customer){
-        office.getPrinter().print(issuedDocument, this, customer);
+    public void usePrinter(String customerName){
+        office.getPrinter().print(issuedDocument, this, customerName);
     }
 
     public int getId() {
