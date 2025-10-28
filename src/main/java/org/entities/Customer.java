@@ -85,6 +85,9 @@ public class Customer implements Runnable {
                 counter = availableCounters.get(new Random().nextInt(availableCounters.size()));
                 break;
             }
+            else {
+                System.out.println("No counters are currently open for document " + doc + "! Please wait a moment.");
+            }
         }
         return counter;
     }

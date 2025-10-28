@@ -150,7 +150,7 @@ public class Main {
         scheduler.scheduleAtFixedRate(() -> {
             var randomCounter = allCounters.get(random.nextInt(allCounters.size()));
             if (Math.random() < 0.5) {
-                CompletableFuture.runAsync(randomCounter::takeRandomCoffeeBreak);
+                CompletableFuture.runAsync(randomCounter::takeCoffeeBreak);
             }
         }, 5, 5, TimeUnit.SECONDS);
 

@@ -10,7 +10,6 @@ public class Counter implements Runnable {
     private final int id;
     private final BlockingQueue<Customer> queue = new LinkedBlockingQueue<>();
     private final Document issuedDocument;
-    private Map<Document, ArrayList<Document>> docDependencies;
     private final ArrayList<Document> requiredDocuments;
     private Office office;
     private volatile boolean open = true;
@@ -19,7 +18,6 @@ public class Counter implements Runnable {
     public Counter(int id, Document issuedDocument, Map<Document, ArrayList<Document>> docDependencies) {
         this.id = id;
         this.issuedDocument = issuedDocument;
-        this.docDependencies = docDependencies;
 
         if(docDependencies.get(issuedDocument) != null)
             this.requiredDocuments = docDependencies.get(issuedDocument);
@@ -35,8 +33,8 @@ public class Counter implements Runnable {
                     Thread.sleep(500);
                 }
 
-                Customer customer = queue.take();
                 servingCustomer = true;
+                Customer customer = queue.take();
 
                 if (!checkRequiredDocuments(customer)) {
                     System.out.println(office.getName() + ": [Counter " + id + "] " + customer.getName() +
@@ -90,7 +88,7 @@ public class Counter implements Runnable {
                 " to " + customer.getName());
     }
 
-    public void takeRandomCoffeeBreak() {
+    public void takeCoffeeBreak() {
         CompletableFuture.runAsync(() -> {
             try {
                 while (servingCustomer) {
